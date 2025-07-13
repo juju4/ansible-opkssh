@@ -16,3 +16,5 @@
   ansible.builtin.service:
     name: "{{ ssh_svc }}"
     state: restarted
+  when:
+    - not is_container | bool

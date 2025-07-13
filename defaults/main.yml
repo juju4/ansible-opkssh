@@ -33,3 +33,4 @@ opkssh_acl:
   }
 
 install_archives: /var/_install
+is_container: false
