@@ -27,9 +27,9 @@
     - ansible_system
     - ansible_architecture
 
-- name: Ensure openssh server is present
+- name: Ensure dependency packages are present
   ansible.builtin.package:
-    name: openssh-server
+    name: "{{ opkssh_pkgs }}"
     state: present
 
 # client and server
