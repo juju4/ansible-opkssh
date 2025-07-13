@@ -27,6 +27,11 @@
     - ansible_system
     - ansible_architecture
 
+- name: Ensure openssh server is present
+  ansible.builtin.package:
+    name: openssh-server
+    state: present
+
 # client and server
 - name: Import opkssh
   ansible.builtin.import_tasks: opkssh.yml
