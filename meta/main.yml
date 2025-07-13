@@ -1,0 +1,19 @@
+---
+galaxy_info:
+  role_name: opkssh
+  author: juju4
+  description: Setup opkssh, OpenPubkey SSH
+  license: BSD
+  min_ansible_version: '1.9'
+  platforms:
+    - name: EL
+      versions:
+        - all
+    - name: Ubuntu
+      versions:
+        - noble
+        - bionic
+  galaxy_tags:
+    - system
+    - ssh
+dependencies: []

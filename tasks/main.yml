@@ -1,0 +1,47 @@
+---
+
+- name: Include variables
+  ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', params) }}"
+  vars:
+    params:
+      files:
+        - "{{ ansible_distribution }}-{{ ansible_distribution_version }}.yml"
+        - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+        - '{{ ansible_distribution }}.yml'
+        - '{{ ansible_os_family }}.yml'
+      paths:
+        - 'vars'
+
+- name: X86_64 arch
+  ansible.builtin.set_fact:
+    opkssh_arch: amd64
+  when: ansible_architecture == 'x86_64'
+- name: Aarch64 arch
+  ansible.builtin.set_fact:
+    opkssh_arch: aarch64
+  when: ansible_architecture == 'aarch64'
+- name: Debug
+  ansible.builtin.debug:
+    var: "{{ item }}"
+  loop:
+    - ansible_system
+    - ansible_architecture
+
+# client and server
+- name: Import opkssh
+  ansible.builtin.import_tasks: opkssh.yml
+
+- name: Server
+  when:
+    - opkssh_mode == 'server'
+  become: yes
+  block:
+    - name: Import user
+      ansible.builtin.import_tasks: user.yml
+
+    - name: Import configure
+      ansible.builtin.import_tasks: configure.yml
+
+    - name: Import RedHat
+      ansible.builtin.import_tasks: redhat.yml
+      when: ansible_os_family == "RedHat"

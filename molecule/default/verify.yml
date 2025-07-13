@@ -1,0 +1,70 @@
+---
+
+- name: Verify opkssh
+  hosts: "{{ playbook_hosts | default('all') }}"
+  vars:
+    exec_file: /usr/local/bin/opkssh
+    config_file1: /etc/opk/auth_id
+    config_file2: /etc/opk/providers
+    log_file: /var/log/opkssh.log
+  tasks:
+    - name: Check executable
+      ansible.builtin.stat:
+        path: "{{ exec_file }}"
+      register: bin1
+    - name: Validate opkssh executable is present
+      ansible.builtin.assert:
+        that:
+          - bin1.stat.exists
+          - bin1.stat.size != 0
+          - bin1.stat.mode == '0755'
+          - bin1.stat.pw_name == 'root'
+
+    - name: Check config file 1
+      ansible.builtin.stat:
+        path: "{{ config_file1 }}"
+      register: f1
+    - name: Validate config file 1 is present
+      ansible.builtin.assert:
+        that:
+          - f1.stat.exists
+          - f1.stat.size != 0
+          - f1.stat.mode == '0640'
+          - f1.stat.pw_name == 'root'
+          - f1.stat.gr_name == 'opksshuser'
+
+    - name: Check config file 2
+      ansible.builtin.stat:
+        path: "{{ config_file2 }}"
+      register: f2
+    - name: Validate config file 2 is present
+      ansible.builtin.assert:
+        that:
+          - f2.stat.exists
+          - f2.stat.size != 0
+          - f2.stat.mode == '0640'
+          - f2.stat.pw_name == 'root'
+          - f2.stat.gr_name == 'opksshuser'
+
+    - name: Check log file
+      ansible.builtin.stat:
+        path: "{{ log_file }}"
+      register: f3
+    - name: Validate log file is present
+      ansible.builtin.assert:
+        that:
+          - f3.stat.exists
+          - f3.stat.mode == '0660'
+          - f3.stat.pw_name == 'root'
+          - f3.stat.gr_name == 'opksshuser'
+
+    - name: Run executable version
+      ansible.builtin.command:
+        cmd: /usr/local/bin/opkssh --version
+      changed_when: false
+      register: run1
+      failed_when: false
+    - name: Validate executable run
+      ansible.builtin.assert:
+        that:
+          - "'opkssh version ' in run1.stdout"

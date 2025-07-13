@@ -1,0 +1,106 @@
+---
+
+- name: Ensure directories exist
+  ansible.builtin.file:
+    name: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/opk
+    - /etc/opk/policy.d
+
+- name: Stat /etc/opk/auth_id
+  ansible.builtin.stat:
+    path: /etc/opk/auth_id
+  register: authid
+
+- name: Ensure /etc/opk/auth_id exists
+  ansible.builtin.file:
+    name: /etc/opk/auth_id
+    state: touch
+    mode: '0640'
+    owner: root
+    group: "{{ opkssh_user }}"
+  when:
+    - not authid.stat.exists
+
+- name: Ensure /etc/opk/providers exists
+  ansible.builtin.copy:
+    dest: /etc/opk/providers
+    mode: '0640'
+    owner: root
+    group: "{{ opkssh_user }}"
+    content: "{{ opkssh_providers }}"
+
+- name: Stat /etc/ssh/sshd_config.d
+  ansible.builtin.stat:
+    path: /etc/ssh/sshd_config.d
+  register: configd
+
+- name: Setup sshd_config.d
+  when:
+    - configd.stat.exists
+  block:
+    - name: AuthorizedKeysCommand for opkssh
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/01-opk-ssh.conf
+        mode: '0644'
+        owner: root
+        group: root
+        content: |
+          AuthorizedKeysCommand /usr/local/bin/opkssh verify %u %k %t
+          AuthorizedKeysCommandUser {{ opkssh_user }}
+      notify:
+        - Restart sshd
+
+- name: Setup sshd_config
+  when:
+    - not configd.stat.exists
+  block:
+    - name: AuthorizedKeysCommand for opkssh
+      ansible.builtin.blockinfile:
+        dest: /etc/ssh/sshd_config
+        mode: '0600'
+        owner: root
+        group: root
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - opkssh"
+        block: |
+          AuthorizedKeysCommand /usr/local/bin/opkssh verify %u %k %t
+          AuthorizedKeysCommandUser {{ opkssh_user }}
+      notify:
+        - Restart sshd
+
+- name: Set Sudoers config
+  ansible.builtin.copy:
+    dest: "{{ opkssh_sudoers_path }}"
+    mode: '0600'
+    owner: root
+    group: root
+    content: |
+      {{ opkssh_user }} ALL=(ALL) NOPASSWD: /usr/local/bin/opkssh readhome *
+  when:
+    - opkssh_home_policy | bool
+
+- name: Stat /var/log/opkssh.log
+  ansible.builtin.stat:
+    path: /var/log/opkssh.log
+  register: log
+
+- name: Set log file
+  ansible.builtin.file:
+    path: /var/log/opkssh.log
+    state: touch
+    mode: '0660'
+    owner: root
+    group: "{{ opkssh_user }}"
+  when:
+    - not log.stat.exists
+
+- name: Configure allowed users/groups to opkssh
+  ansible.builtin.command:  # noqa no-changed-when
+    cmd: "opkssh add {{ item.local_user }} {{ item.oidc_id }} {{ item.oidc_provider }}"
+  register: add
+  changed_when:
+    - add.rc != 0
+    - "', skipping...' not in add.stdout"
+  loop: "{{ opkssh_acl }}"

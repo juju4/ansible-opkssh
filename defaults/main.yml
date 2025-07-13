@@ -1,0 +1,35 @@
+---
+
+opkssh_version: 0.6.1
+# linux-amd64
+opkssh_checksum: sha256:61646ef0f977aaa374a31e3135d322b8b29c86d51695eb02642e9e0166ef15dd
+
+opkssh_mode: 'server'
+# opkssh_mode: 'client'
+opkssh_install_dir: "/usr/local/bin"
+opkssh_binary_name: "opkssh"
+opkssh_github_repo: "openpubkey/opkssh"
+opkssh_user: "opksshuser"
+opkssh_sudoers_path: "/etc/sudoers.d/opkssh"
+opkssh_home_policy: true
+
+# Define the default OpenID Providers
+# Issuer URI of the OP
+# Client-ID, the audience claim in the ID Token
+# Expiration policy, options are: 24h,48h,1week,oidc,oidc-refreshed
+opkssh_providers: |
+  https://accounts.google.com 206584157355-7cbe4s640tvm7naoludob4ut1emii7sf.apps.googleusercontent.com 24h
+  https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0 096ce0a3-5e72-4da8-9c86-12924b294a01 24h
+  https://gitlab.com 8d8b7024572c7fd501f64374dec6bba37096783dfcd792b3988104be08cb6923 24h
+
+opkssh_acl:
+  - { local_user: root,
+      oidc_id: alice@gmail.com,
+      oidc_provider: google
+  }
+  - { local_user: root,
+      oidc_id: 'oidc:groups:ssh-users',
+      oidc_provider: google
+  }
+
+install_archives: /var/_install
