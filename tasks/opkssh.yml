@@ -9,7 +9,7 @@
         mode: '0755'
         owner: root
         # group: "{{ opkssh_user }}"
-        checksum: "{{ opkssh_checksum }}"
+        checksum: "{{ opkssh_checksum | default(omit) }}"
       environment: "{{ proxy_env | default(omit) }}"
   rescue:
     - name: Get install archive - orchestrator
@@ -17,7 +17,7 @@
         url: "https://github.com/{{ opkssh_github_repo }}/releases/download/v{{ opkssh_version }}/opkssh-linux-{{ opkssh_arch }}"
         dest: "/tmp/opkssh"
         mode: '0755'
-        checksum: "{{ opkssh_checksum }}"
+        checksum: "{{ opkssh_checksum | default(omit) }}"
       environment: "{{ proxy_env_orchestrator | default(omit) }}"
       delegate_to: localhost
     - name: Copy install archive

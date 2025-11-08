@@ -1,8 +1,10 @@
 ---
 
-opkssh_version: 0.10.0
+# renovate: datasource=github-releases depName=openpubkey/opkssh
+opkssh_github_version: v0.10.0
+opkssh_version: "{{ opkssh_github_version | regex_replace('^v', '') }}"
 # linux-amd64
-opkssh_checksum: sha256:e848e32695cfae8c18429c183fa11865de3b5669b6505fac3d4317911d352963
+# opkssh_checksum: sha256:e848e32695cfae8c18429c183fa11865de3b5669b6505fac3d4317911d352963
 
 opkssh_mode: 'server'
 # opkssh_mode: 'client'
