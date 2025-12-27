@@ -5,10 +5,10 @@
   vars:
     params:
       files:
-        - "{{ ansible_distribution }}-{{ ansible_distribution_version }}.yml"
-        - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
-        - '{{ ansible_distribution }}.yml'
-        - '{{ ansible_os_family }}.yml'
+        - "{{ ansible_facts['distribution'] }}-{{ ansible_facts['distribution_version'] }}.yml"
+        - "{{ ansible_facts['distribution'] }}-{{ ansible_facts['distribution_major_version'] }}.yml"
+        - "{{ ansible_facts['distribution'] }}.yml"
+        - "{{ ansible_facts['os_family'] }}.yml"
       paths:
         - 'vars'
 
@@ -16,27 +16,27 @@
   ansible.builtin.set_fact:
     is_container: true
   when: >
-    (ansible_virtualization_type is defined and
-      (ansible_virtualization_type == "docker"
-       or ansible_virtualization_type == "container"
-       or ansible_virtualization_type == "containerd"
+    (ansible_facts['virtualization_type'] is defined and
+      (ansible_facts['virtualization_type'] == "docker"
+       or ansible_facts['virtualization_type'] == "container"
+       or ansible_facts['virtualization_type'] == "containerd"
       )
     )
 
 - name: X86_64 arch
   ansible.builtin.set_fact:
     opkssh_arch: amd64
-  when: ansible_architecture == 'x86_64'
+  when: ansible_facts['architecture'] == 'x86_64'
 - name: Aarch64 arch
   ansible.builtin.set_fact:
     opkssh_arch: aarch64
-  when: ansible_architecture == 'aarch64'
+  when: ansible_facts['architecture'] == 'aarch64'
 - name: Debug
   ansible.builtin.debug:
     var: "{{ item }}"
   loop:
-    - ansible_system
-    - ansible_architecture
+    - ansible_facts['system']
+    - ansible_facts['architecture']
 
 - name: Ensure dependency packages are present
   ansible.builtin.package:
@@ -60,4 +60,4 @@
 
     - name: Import RedHat
       ansible.builtin.import_tasks: redhat.yml
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts['os_family'] == "RedHat"
