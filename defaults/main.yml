@@ -6,7 +6,7 @@ opkssh_version: "{{ opkssh_github_version | regex_replace('^v', '') }}"
 # linux-amd64
 # opkssh_checksum: sha256:e848e32695cfae8c18429c183fa11865de3b5669b6505fac3d4317911d352963
 
-opkssh_mode: 'server'
+opkssh_mode: "server"
 # opkssh_mode: 'client'
 opkssh_install_dir: "/usr/local/bin"
 opkssh_binary_name: "opkssh"
@@ -25,14 +25,8 @@ opkssh_providers: |
   https://gitlab.com 8d8b7024572c7fd501f64374dec6bba37096783dfcd792b3988104be08cb6923 24h
 
 opkssh_acl:
-  - { local_user: root,
-      oidc_id: alice@gmail.com,
-      oidc_provider: google
-  }
-  - { local_user: root,
-      oidc_id: 'oidc:groups:ssh-users',
-      oidc_provider: google
-  }
+  - { local_user: root, oidc_id: alice@gmail.com, oidc_provider: google }
+  - { local_user: root, oidc_id: "oidc:groups:ssh-users", oidc_provider: google }
 
 install_archives: /var/_install
 is_container: false

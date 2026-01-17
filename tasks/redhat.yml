@@ -1,10 +1,9 @@
 ---
-
 - name: Set selinux policy for opkssh
   ansible.builtin.template:
     src: opkssh.te.j2
     dest: /tmp/opkssh.te
-    mode: '0644'
+    mode: "0644"
     owner: root
     group: root
   notify:

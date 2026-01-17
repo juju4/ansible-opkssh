@@ -1,5 +1,4 @@
 ---
-
 - name: Add user opkssh
   ansible.builtin.user:
     name: "{{ opkssh_user }}"
@@ -7,4 +6,4 @@
     shell: "/sbin/nologin"
     system: true
     create_home: false
-  become: yes
+  become: true

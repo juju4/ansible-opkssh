@@ -1,5 +1,4 @@
 ---
-
 - name: Include variables
   ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', params) }}"
   vars:
@@ -10,7 +9,7 @@
         - "{{ ansible_facts['distribution'] }}.yml"
         - "{{ ansible_facts['os_family'] }}.yml"
       paths:
-        - 'vars'
+        - "vars"
 
 - name: Set fact is_container
   ansible.builtin.set_fact:
@@ -50,7 +49,7 @@
 - name: Server
   when:
     - opkssh_mode == 'server'
-  become: yes
+  become: true
   block:
     - name: Import user
       ansible.builtin.import_tasks: user.yml

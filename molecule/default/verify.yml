@@ -1,5 +1,4 @@
 ---
-
 - name: Verify opkssh
   hosts: "{{ playbook_hosts | default('all') }}"
   vars:
