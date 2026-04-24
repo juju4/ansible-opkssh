@@ -28,7 +28,7 @@
   when: ansible_facts['architecture'] == 'x86_64'
 - name: Aarch64 arch
   ansible.builtin.set_fact:
-    opkssh_arch: aarch64
+    opkssh_arch: arm64
   when: ansible_facts['architecture'] == 'aarch64'
 - name: Debug
   ansible.builtin.debug:
