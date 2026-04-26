@@ -47,7 +47,7 @@
         owner: root
         group: root
         content: |
-          AuthorizedKeysCommand /usr/local/bin/opkssh verify %u %k %t
+          AuthorizedKeysCommand {{ opkssh_install_dir }}/{{ opkssh_binary_name }} verify %u %k %t
           AuthorizedKeysCommandUser {{ opkssh_user }}
       notify:
         - Restart sshd
@@ -64,7 +64,7 @@
         group: root
         marker: "# {mark} ANSIBLE MANAGED BLOCK - opkssh"
         block: |
-          AuthorizedKeysCommand /usr/local/bin/opkssh verify %u %k %t
+          AuthorizedKeysCommand {{ opkssh_install_dir }}/{{ opkssh_binary_name }} verify %u %k %t
           AuthorizedKeysCommandUser {{ opkssh_user }}
       notify:
         - Restart sshd
@@ -76,7 +76,7 @@
     owner: root
     group: root
     content: |
-      {{ opkssh_user }} ALL=(ALL) NOPASSWD: /usr/local/bin/opkssh readhome *
+      {{ opkssh_user }} ALL=(ALL) NOPASSWD: {{ opkssh_install_dir }}/{{ opkssh_binary_name }} readhome *
   when:
     - opkssh_home_policy | bool
 
@@ -97,7 +97,7 @@
 
 - name: Configure allowed users/groups to opkssh
   ansible.builtin.command: # noqa no-changed-when
-    cmd: "opkssh add {{ item.local_user }} {{ item.oidc_id }} {{ item.oidc_provider }}"
+    cmd: "{{ opkssh_install_dir }}/{{ opkssh_binary_name }} add {{ item.local_user }} {{ item.oidc_id }} {{ item.oidc_provider }}"
   register: add
   changed_when:
     - add.rc != 0
