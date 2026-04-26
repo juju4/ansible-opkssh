@@ -1,0 +1,149 @@
+---
+name: default-bare
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:  # run weekly, every monday 03:00
+    - cron: '0 3 * * 1'
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    runs-on: ${{ matrix.distribution }}-${{ matrix.version }}
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - distribution: ubuntu
+            version: '24.04'
+            suite: default
+            experimental: false
+          - distribution: ubuntu
+            version: '22.04'
+            suite: default
+            experimental: false
+          - distribution: ubuntu
+            version: '24.04-arm'
+            suite: default
+            experimental: false
+    env:
+      ANSIBLE_CALLBACKS_ENABLED: profile_tasks
+      ANSIBLE_EXTRA_VARS: ""
+      ANSIBLE_ROLE: juju4.opkssh
+      ANSIBLE_SUITE: ${{ matrix.suite }}
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fe104658747b27e96e4f7e80cd0a94068e53901d  # v2.16.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            azure.archive.ubuntu.com:80
+            d20hasrqv82i0q.cloudfront.net:443
+            dl.google.com:443
+            download.falco.org:443
+            esm.ubuntu.com:443
+            falco.org:443
+            falcosecurity.github.io:443
+            files.pythonhosted.org:443
+            galaxy.ansible.com:443
+            ghcr.io:443
+            github.com:443
+            hosted-compute-watchdog-prod-eus-02.githubapp.com:443
+            hosted-compute-watchdog-prod-iad-02.githubapp.com:443
+            packages.microsoft.com:443
+            pypi.org:443
+            www.google.com:1025
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          path: ${{ env.ANSIBLE_ROLE }}
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.x'
+      - name: Cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt
+            /var/_install
+          key: cache-ansible-opkssh-${{ steps.get-date.outputs.date }}
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install ansible-lint flake8 yamllint
+          which ansible
+          pip3 install ansible
+          pip3 show ansible
+          ansible --version
+          cd $GITHUB_WORKSPACE/$ANSIBLE_ROLE
+          [ -f get-dependencies.sh ] && sh -x get-dependencies.sh
+          [ -f molecule/$ANSIBLE_SUITE/requirements.yml ] && ansible-galaxy install -r molecule/$ANSIBLE_SUITE/requirements.yml
+          { echo '[defaults]'; echo 'callback_enabled = profile_tasks, timer'; echo 'roles_path = ../:/home/runner/.ansible/roles'; echo 'ansible_python_interpreter: /usr/bin/python3'; } >> ansible.cfg
+      - name: Environment
+        run: |
+          set -x
+          ansible --version
+          ansible-config dump --only-changed -t all
+          ansible-galaxy collection list || true
+          ansible-galaxy role list || true
+          pwd
+          env
+          find . -ls
+      - name: Galaxy dependencies
+        run: |
+          cd $GITHUB_WORKSPACE/$ANSIBLE_ROLE && ansible-galaxy install --timeout 120 --verbose -r molecule/$ANSIBLE_SUITE/requirements.yml
+        continue-on-error: true
+      - name: Before script - systemctl
+        run: |
+          systemd-analyze security || true
+          systemctl status --all --no-pager || true
+      - name: run test
+        run: |
+          cd $GITHUB_WORKSPACE/$ANSIBLE_ROLE && ansible-playbook -i localhost, --connection=local --become -vvv molecule/$ANSIBLE_SUITE/converge.yml ${ANSIBLE_EXTRA_VARS}
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+      - name: idempotency run
+        run: |
+          cd $GITHUB_WORKSPACE/$ANSIBLE_ROLE && ansible-playbook -i localhost, --connection=local --become -vvv molecule/$ANSIBLE_SUITE/converge.yml ${ANSIBLE_EXTRA_VARS} | tee /tmp/idempotency.log | grep -q 'changed=0.*failed=0'  && (echo 'Idempotence test: pass' && exit 0)  || (echo 'Idempotence test: fail' && cat /tmp/idempotency.log && exit 1)
+      - name: On failure
+        run: |
+          systemctl -l --no-pager status
+        if: env.WORKFLOW_CONCLUSION == 'failure'  # notify only if failure
+      - name: After script - systemctl
+        run: |
+          systemd-analyze security || true
+          systemctl --failed || true
+          systemctl status falco || true
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - etc
+        run: |
+          set -x
+          sudo ls -R /etc/opk/
+          sudo cat /etc/opk/auth_id
+          sudo cat /etc/opk/providers
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - opkssh
+        run: |
+          ls -l /usr/local/bin/opkssh
+          /usr/local/bin/opkssh --version
+          sudo tail -200 /var/log/opkssh.log || true
+        if: ${{ always() }}
+        continue-on-error: true
