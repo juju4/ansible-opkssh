@@ -10,6 +10,8 @@
         # group: "{{ opkssh_user }}"
         checksum: "{{ opkssh_checksum | default(omit) }}"
       environment: "{{ proxy_env | default(omit) }}"
+      register: dl_result
+      until: dl_result is success
   rescue:
     - name: Get install archive - orchestrator
       ansible.builtin.get_url:
@@ -19,6 +21,8 @@
         checksum: "{{ opkssh_checksum | default(omit) }}"
       environment: "{{ proxy_env_orchestrator | default(omit) }}"
       delegate_to: localhost
+      register: dl_result
+      until: dl_result is success
     - name: Copy install archive
       ansible.builtin.copy:
         src: "/tmp/opkssh"
