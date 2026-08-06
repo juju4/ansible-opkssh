@@ -6,6 +6,20 @@
     mode: "0644"
     owner: root
     group: root
+    when: ansible_facts['distribution_major_version'] | int <= 9
+  notify:
+    - Compiling semodule
+    - Packaging semodule
+    - Installing semodule
+
+- name: Set selinux policy for opkssh (RHEL10)
+  ansible.builtin.template:
+    src: opkssh-rhel10.te.j2
+    dest: /tmp/opkssh.te
+    mode: "0644"
+    owner: root
+    group: root
+    when: ansible_facts['distribution_major_version'] | int == 10
   notify:
     - Compiling semodule
     - Packaging semodule
