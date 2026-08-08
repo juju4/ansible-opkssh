@@ -6,6 +6,8 @@
     mode: "0644"
     owner: root
     group: root
+  vars:
+    sshd_type: "{{ (ansible_facts['distribution_major_version'] | int == 10) | ansible.builtin.ternary('sshd_session_t', 'sshd_t') }}"
   notify:
     - Compiling semodule
     - Packaging semodule
